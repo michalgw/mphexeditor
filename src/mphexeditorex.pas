@@ -735,6 +735,7 @@ const
 implementation
 
 uses
+  LazFileUtils,
   StdCtrls, {$IFDEF MPH_WIN}ShellAPI, ComObj,{$ENDIF} TypInfo;
 
 resourcestring

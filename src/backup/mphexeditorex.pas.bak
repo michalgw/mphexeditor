@@ -1120,11 +1120,7 @@ begin
     BorderStyle := bsDialog;
     Width := Screen.Width div 4;
     Height := Screen.Height div 4;
-{$IFDEF DELPHI6UP}
     Position := poOwnerFormCenter;
-{$ELSE}
-    Position := poScreenCenter;
-{$ENDIF}
     Caption := SELECT_FORMAT_CAPTION;
 
     LbtnOK := TButton.Create(LfrmDialog);
