@@ -896,8 +896,8 @@ type
     function QueryGetData(const formatetc: TFormatEtc): HResult; stdcall;
     function GetCanonicalFormatEtc(const formatetc: TFormatEtc; out
       formatetcOut: TFormatEtc): HResult; stdcall;
-    function SetData(const formatetc: TagFormatEtc; const medium: TagStgMedium;
-      fRelease: longBOOL): HResult; stdcall;
+    Function SetData(Const formatetc : FORMATETC;var medium:STGMEDIUM;
+      FRelease : BOOL):HRESULT; StdCall;
     function EnumFormatEtc(dwDirection: longword; out enumFormatEtc:
       IEnumFormatEtc): HResult; stdcall;
     function DAdvise(const formatetc: TagFormatEtc; advf: longword; const advSink:
@@ -3214,8 +3214,8 @@ end;
 
 // check for dropeffect calls (dodragdrop not always return the real effect)
 
-function TMPHDataObject.SetData(const formatetc: TagFormatEtc;
-  const medium: TagStgMedium; fRelease: longBOOL): HResult; stdcall;
+function TMPHDataObject.SetData(const formatetc: FORMATETC;
+  var medium: STGMEDIUM; FRelease: BOOL): HRESULT; StdCall;
 var
   LPtrEffect: PDWORD;
 begin
