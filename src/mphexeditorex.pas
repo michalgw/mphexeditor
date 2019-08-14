@@ -896,7 +896,8 @@ type
     function QueryGetData(const formatetc: TFormatEtc): HResult; stdcall;
     function GetCanonicalFormatEtc(const formatetc: TFormatEtc; out
       formatetcOut: TFormatEtc): HResult; stdcall;
-    Function SetData(Const formatetc : FORMATETC;var medium:STGMEDIUM;
+    Function SetData(Const formatetc : FORMATETC;
+      {$IF FPC_FullVersion >= 30200}var{$ELSE}const{$IFEND} medium:STGMEDIUM;
       FRelease : BOOL):HRESULT; StdCall;
     function EnumFormatEtc(dwDirection: longword; out enumFormatEtc:
       IEnumFormatEtc): HResult; stdcall;
@@ -3215,7 +3216,8 @@ end;
 // check for dropeffect calls (dodragdrop not always return the real effect)
 
 function TMPHDataObject.SetData(const formatetc: FORMATETC;
-  var medium: STGMEDIUM; FRelease: BOOL): HRESULT; StdCall;
+  {$IF FPC_FullVersion >= 30200}var{$ELSE}const{$IFEND} medium: STGMEDIUM;
+  FRelease: BOOL): HRESULT; StdCall;
 var
   LPtrEffect: PDWORD;
 begin
