@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="12"/>
+    <PathDelim Value="\"/>
+    <General>
+      <Flags>
+        <MainUnitHasUsesSectionForAllUnits Value="False"/>
+        <MainUnitHasCreateFormStatements Value="False"/>
+        <MainUnitHasTitleStatement Value="False"/>
+        <CompatibilityMode Value="True"/>
+      </Flags>
+      <SessionStorage Value="InProjectDir"/>
+      <Title Value="sample2"/>
+      <UseAppBundle Value="False"/>
+      <ResourceType Value="res"/>
+      <UseXPManifest Value="True"/>
+      <Icon Value="0"/>
+    </General>
+    <i18n>
+      <EnableI18N LFM="False"/>
+    </i18n>
+    <BuildModes Count="1">
+      <Item1 Name="Default" Default="True"/>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes Count="1">
+        <Mode0 Name="default"/>
+      </Modes>
+    </RunParams>
+    <RequiredPackages Count="3">
+      <Item1>
+        <PackageName Value="Printer4Lazarus"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="mphexeditorlaz"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="LCL"/>
+      </Item3>
+    </RequiredPackages>
+    <Units Count="10">
+      <Unit0>
+        <Filename Value="sample2.lpr"/>
+        <IsPartOfProject Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="umain.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fmMain"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="ureplace.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="dlgReplace"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="uprintprogress.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="dlgPrintProgress"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="ucustomtranslation.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="dlgEditCustomTranslation"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="ufind.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="dlgFind"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="uprinting.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="fmPrinting"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="uinputnumber.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="dlgInputNumber"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="uconvert.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="dlgConvert"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="uOptions.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="dlgOptions"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit9>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <Target>
+      <Filename Value="sample2"/>
+    </Target>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <Parsing>
+      <SyntaxOptions>
+        <SyntaxMode Value="Delphi"/>
+      </SyntaxOptions>
+    </Parsing>
+    <Linking>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
+    </Linking>
+    <Other>
+      <CustomOptions Value="-dBorland -dVer150 -dDelphi7 -dCompiler6_Up -dPUREPASCAL"/>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="3">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+      </Item3>
+    </Exceptions>
+  </Debugging>
+</CONFIG>

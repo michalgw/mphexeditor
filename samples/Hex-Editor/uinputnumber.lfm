@@ -1,0 +1,59 @@
+object dlgInputNumber: TdlgInputNumber
+  Left = 381
+  Height = 86
+  Top = 325
+  Width = 228
+  BorderStyle = bsDialog
+  BorderWidth = 4
+  Caption = 'Select new value'
+  ClientHeight = 86
+  ClientWidth = 228
+  Position = poOwnerFormCenter
+  LCLVersion = '2.1.0.0'
+  object Label1: TLabel
+    Left = 8
+    Height = 15
+    Top = 8
+    Width = 90
+    Caption = 'Select new value:'
+    ParentColor = False
+  end
+  object Button1: TButton
+    Left = 148
+    Height = 25
+    Top = 25
+    Width = 75
+    Caption = 'OK'
+    Default = True
+    ModalResult = 1
+    TabOrder = 0
+  end
+  object Button2: TButton
+    Left = 148
+    Height = 25
+    Top = 57
+    Width = 75
+    Cancel = True
+    Caption = 'Cancel'
+    ModalResult = 2
+    TabOrder = 1
+  end
+  object Edit1: TEdit
+    Left = 8
+    Height = 23
+    Top = 28
+    Width = 69
+    TabOrder = 2
+    Text = '0'
+  end
+  object UpDown1: TUpDown
+    Left = 77
+    Height = 23
+    Top = 28
+    Width = 15
+    Associate = Edit1
+    Min = 0
+    Position = 0
+    TabOrder = 3
+  end
+end

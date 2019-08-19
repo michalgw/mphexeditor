@@ -1,0 +1,224 @@
+object dlgEditCustomTranslation: TdlgEditCustomTranslation
+  Left = 309
+  Height = 306
+  Top = 259
+  Width = 447
+  BorderStyle = bsDialog
+  BorderWidth = 4
+  Caption = 'Edit Custom Character Translation'
+  ClientHeight = 306
+  ClientWidth = 447
+  OnClose = FormClose
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  Position = poOwnerFormCenter
+  LCLVersion = '2.1.0.0'
+  object Button1: TButton
+    Left = 288
+    Height = 25
+    Top = 277
+    Width = 75
+    Caption = 'OK'
+    Default = True
+    ModalResult = 1
+    TabOrder = 0
+  end
+  object Button2: TButton
+    Left = 368
+    Height = 25
+    Top = 277
+    Width = 75
+    Cancel = True
+    Caption = 'Cancel'
+    ModalResult = 2
+    TabOrder = 1
+  end
+  object MPHexEditor1: TMPHexEditor
+    Cursor = crIBeam
+    Left = 4
+    Height = 203
+    Top = 30
+    Width = 439
+    Align = alTop
+    Font.Color = clWhite
+    Font.Height = -11
+    Font.Name = 'Courier New'
+    ParentFont = False
+    TabOrder = 2
+    BytesPerRow = 16
+    BytesPerColumn = 1
+    Translation = tkAsIs
+    OffsetFormat = '2!10:|'
+    Colors.Background = clBlack
+    Colors.ChangedBackground = clMaroon
+    Colors.ChangedText = clWhite
+    Colors.CursorFrame = clNavy
+    Colors.Offset = clYellow
+    Colors.OddColumn = clSkyBlue
+    Colors.EvenColumn = clMoneyGreen
+    Colors.CurrentOffsetBackground = clWhite
+    Colors.OffsetBackground = clMedGray
+    Colors.CurrentOffset = clBlack
+    Colors.Grid = clBtnFace
+    Colors.NonFocusCursorFrame = clAqua
+    Colors.ActiveFieldBackground = clWindow
+    FocusFrame = True
+    NoSizeChange = True
+    AllowInsertMode = False
+    DrawGridLines = False
+    Version = 'september 30, 2007; © markus stephany, vcl[at]mirkes[dot]de'
+    MaxUndo = 1
+    DrawGutter3D = False
+    ShowRuler = True
+    ColWidths = (
+      42
+      6
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      14
+      7
+      8
+      8
+      8
+      8
+      8
+      8
+      8
+      8
+      8
+      8
+      8
+      8
+      8
+      8
+      8
+      15
+    )
+    RowHeights = (
+      19
+      0
+      16
+    )
+  end
+  object ToolBar1: TToolBar
+    Left = 4
+    Height = 26
+    Top = 4
+    Width = 439
+    AutoSize = True
+    ButtonHeight = 22
+    ButtonWidth = 43
+    Caption = 'ToolBar1'
+    EdgeBorders = [ebLeft, ebTop, ebRight, ebBottom]
+    Images = fmMain.ImageList1
+    List = True
+    ParentShowHint = False
+    ShowCaptions = True
+    ShowHint = True
+    TabOrder = 3
+    object btnLoad: TToolButton
+      Left = 3
+      Hint = 'Load translation table'
+      Top = 2
+      AutoSize = True
+      ImageIndex = 6
+      OnClick = btnLoadClick
+    end
+    object btnSave: TToolButton
+      Left = 46
+      Hint = 'Save translation table'
+      Top = 2
+      AutoSize = True
+      ImageIndex = 7
+      OnClick = btnSaveClick
+    end
+    object ToolButton1: TToolButton
+      Left = 89
+      Height = 22
+      Top = 2
+      Caption = 'ToolButton1'
+      ImageIndex = 19
+      Style = tbsSeparator
+    end
+    object btnAuto: TToolButton
+      Left = 97
+      Hint = 'Autocreate other table'
+      Top = 2
+      AllowAllUp = True
+      AutoSize = True
+      ImageIndex = 20
+      OnClick = btnAutoClick
+    end
+  end
+  object TabSet1: TTabControl
+    Left = 4
+    Height = 21
+    Top = 250
+    Width = 439
+    OnChange = TabSet1Change
+    TabIndex = 0
+    Tabs.Strings = (
+      'From Windows Codepage'
+      'To Windows Codepage'
+    )
+    Align = alTop
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'MS Sans Serif'
+    ParentFont = False
+    TabOrder = 4
+  end
+  object pnPos: TPanel
+    Left = 4
+    Height = 17
+    Top = 233
+    Width = 439
+    Align = alTop
+    Alignment = taLeftJustify
+    BevelOuter = bvLowered
+    BorderWidth = 4
+    TabOrder = 5
+  end
+  object OpenDialog1: TOpenDialog
+    Title = 'Open Translation Table'
+    Filter = 'All Files (*.*)|*.*'
+    Left = 92
+    Top = 72
+  end
+  object SaveDialog1: TSaveDialog
+    Title = 'Save Translation Table'
+    Filter = 'All Files (*.*)|*.*'
+    Options = [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing]
+    Left = 208
+    Top = 72
+  end
+end

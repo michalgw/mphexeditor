@@ -1,0 +1,44 @@
+object dlgPrintProgress: TdlgPrintProgress
+  Left = 381
+  Height = 81
+  Top = 325
+  Width = 227
+  BorderStyle = bsDialog
+  BorderWidth = 4
+  Caption = 'Printing...'
+  ClientHeight = 81
+  ClientWidth = 227
+  OnCreate = FormCreate
+  OnShow = FormShow
+  Position = poOwnerFormCenter
+  LCLVersion = '2.1.0.0'
+  object lbPrinting: TLabel
+    Left = 4
+    Height = 15
+    Top = 4
+    Width = 219
+    Align = alTop
+    Alignment = taCenter
+    Caption = 'From:'
+    Layout = tlCenter
+    ParentColor = False
+  end
+  object Button2: TButton
+    Left = 76
+    Height = 25
+    Top = 49
+    Width = 75
+    Cancel = True
+    Caption = 'Cancel'
+    ModalResult = 2
+    OnClick = Button2Click
+    TabOrder = 0
+  end
+  object ProgressBar1: TProgressBar
+    Left = 5
+    Height = 16
+    Top = 20
+    Width = 217
+    TabOrder = 1
+  end
+end
