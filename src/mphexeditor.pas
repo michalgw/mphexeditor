@@ -7810,6 +7810,8 @@ procedure TCustomMPHexEditor.MoveColRow(ACol, ARow: Longint; MoveAnchor,
 begin
   Col := ACol;
   Row := ARow;
+  if Show then
+    CheckSetCaret;
 end;
 
 procedure TCustomMPHexEditor.CenterCursorPosition;
