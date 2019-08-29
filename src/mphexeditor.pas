@@ -998,6 +998,7 @@ type
     // @exclude(used by TMPHexEditorEx for internal undo changing)
     FModified: boolean;
 
+    procedure CreateHandle; override;
     procedure MoveColRow(ACol, ARow: Longint;MoveAnchor, Show: Boolean);
 
     // @exclude(overwrite mouse wheel for zooming)
@@ -3148,6 +3149,10 @@ end;
 
 procedure TCustomMPHexEditor.CreateEmptyFile(const TempName: string);
 begin
+  // Avoid crash when HexEditor is contained in a TFrame.
+  if not HandleAllocated then
+    exit;
+
   FreeStorage;
   if TempName = '' then
     FFileName := UNNAMED_FILE
@@ -3162,6 +3167,12 @@ begin
   FHasFile := False;
   MoveColRow(GRID_FIXED, GRID_FIXED, True, True);
   Changed;
+end;
+
+procedure TCustomMPHexEditor.CreateHandle;
+begin
+  inherited;
+  CreateEmptyFile(UNNAMED_FILE);
 end;
 
 procedure TCustomMPHexEditor.SaveToStream(Strm: TStream);
