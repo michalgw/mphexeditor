@@ -6368,7 +6368,7 @@ var
   LBoolChanged: boolean;
   LIntDataPos, LIntDataSize: integer;
   LWStrOutput: String; //WideString;
-  LWChrOutput: PChar; //WideChar;
+//  LWChrOutput: PChar; //WideChar;
   LColTextColor, LColTextBackColor, LColBackColor: TColor;
   LIntPenWidthSave: integer;
   LrecSize: TSize;
@@ -6492,6 +6492,8 @@ var
 
   // draw a hex/char cell
   procedure DrawDataCell(const bIsCharCell, bIsCurrentField: boolean);
+  var
+    LWChrOutput: WideChar;
   begin
     LIntDataPos := GetPosAtCursor(LIntCurCol, LIntCurRow);
     FDrawDataPosition := LIntDataPos;
@@ -6504,34 +6506,32 @@ var
     else
       LColBackColor := FColors.FBackground;
 
-    // nicht zeichnen, falls keine daten
+    // Do not paint when there are not data
     if (LIntDataPos < LIntDataSize) then
     begin
       if not bIsCharCell then
-      begin // partie hexadecimale
+      begin // hexadecimal part
         if ((LIntCurCol - GRID_FIXED) mod 2) = FSwapNibbles then
-          LWChrOutput := {WideChar}PChar(FHexChars[Data[LIntDataPos] shr 4])
+          LWChrOutput := FHexChars[Data[LIntDataPos] shr 4]
         else
-          LWChrOutput := {WideChar}PChar(FHexChars[Data[LIntDataPos] and 15])
+          LWChrOutput := FHexChars[Data[LIntDataPos] and 15]
       end
       else
       begin
         if FUnicodeCharacters then
         begin
           LWChrOutput := #0;
-          ReadBuffer(LWChrOutput, LIntDataPos, Min(2, LIntDataSize -
-            LIntDataPos));
-          //if FUnicodeBigEndian then
-          //  SwapWideChar(LWChrOutput);
-          if (LWChrOutput < #256) and (Char(LWChrOutput) in FMaskedChars)
-            then
-            LWChrOutput := {WideChar}PChar(FReplaceUnprintableCharsBy);
+          ReadBuffer(LWChrOutput, LIntDataPos, Min(2, LIntDataSize - LIntDataPos));
+          if FUnicodeBigEndian then
+            SwapWideChar(LWChrOutput);
+          if (LWChrOutput < #256) and (Char(LWChrOutput) in FMaskedChars) then
+            LWChrOutput := FReplaceUnprintableCharsBy;
         end
         else
-          LWChrOutput := {WideChar}PChar(TranslateToAnsiChar(Data[LIntDataPos]));
+          LWChrOutput := char(Data[LIntDataPos]);
       end;
 
-      // testen ob byte geändert
+      // Test whether byte has changed
       LBoolChanged := (HasChanged(LIntDataPos)) or ((FUnicodeCharacters and
         bIsCharCell) and HasChanged(LIntDataPos + 1));
       LBoolOddCol := (((LIntCurCol - GRID_FIXED) div FBytesPerCol) mod 2) = 0;
@@ -6596,14 +6596,13 @@ var
         LBoolDraw := True;
         if Assigned(FOnDrawCell) then
         begin
-          LWStrOutput := LWChrOutput;
+          LWStrOutput := UTF8Encode('' + LWChrOutput);
           FOnDrawCell(self, Canvas, LIntCurCol, LIntCurRow, LWStrOutput, LRect2,
             LBoolDraw);
-          LWChrOutput := PChar((LWStrOutput+#0)[1]);
+          LWChrOutput := WideString(LWStrOutput+#0)[1];
         end;
         if LBoolDraw then
         begin
-
           FillRect(LRctWhere);
           LIntOldFontSize := Canvas.Font.Size;
           if FUnicodeCharacters then
@@ -6615,7 +6614,6 @@ var
             1, nil);
           if FUnicodeCharacters then
             Canvas.Font.Size := LIntOldFontSize;
-
         end
         else
           LBoolDraw := True;
@@ -6635,7 +6633,7 @@ var
       end;
     end;
 
-    // focus frame auf der anderen seite
+    // Focus frame on the other side
     if LBoolFocused then
     begin
       if not FPosInCharField then
