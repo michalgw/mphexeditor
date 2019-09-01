@@ -297,7 +297,7 @@ interface
 
 uses
   {Windows, Messages, }SysUtils, Classes, Graphics, Controls, Forms,
-  LCLIntf, LCLType, LMessages, Types, {gridhelper,}
+  LCLIntf, LCLType, LMessages, LCLVersion, Types, {gridhelper,}
   Grids;
 
 type
@@ -7023,8 +7023,12 @@ procedure TCustomMPHexEditor.BookmarkBitmapChanged(Sender: TObject);
 begin
   // invalidieren
   FBookmarkImageList.Clear;
+  {$IF LCL_FullVersion >= 2000000}
+  FBookmarkImageList.AddSliced(FBookmarkBitmap, 20, 1);
+  {$ELSE}
   FBookmarkImageList.AddMasked(FBookmarkBitmap, FBookmarkBitmap.Canvas.Pixels[0,
     0]);
+  {$IFEND}
   if HandleAllocated then
     Invalidate;
 end;
