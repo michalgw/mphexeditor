@@ -56,6 +56,7 @@ object fmMain: TfmMain
         Text = 'Progress'
         Width = 50
       end>
+    SimplePanel = False
     SizeGrip = False
     OnDrawPanel = StatusBar1DrawPanel
   end
