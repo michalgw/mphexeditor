@@ -1852,6 +1852,9 @@ type
   end;
 
   // @exclude(implements undo/redo)
+
+  { TMPHUndoStorage }
+
   TMPHUndoStorage = class(TMemoryStream)
   private
     FCount,
@@ -1874,7 +1877,7 @@ type
   public
     constructor Create(AEditor: TCustomMPHexEditor);
     destructor Destroy; override;
-    procedure SetSize(NewSize: longint); override;
+    procedure SetSize({$ifdef CPU64}const NewSize: Int64{$else}NewSize: LongInt{$endif}); override;
     procedure CreateUndo(aKind: TMPHUndoFlag; APosition, ACount, AReplaceCount:
       integer; const SDescription: string = '');
     function CanUndo: boolean;
@@ -8528,7 +8531,7 @@ begin
     FLastUndoDesc := FDescription;
 
     // delete last undo record
-    SetSize(Max(0, Size - LIntRecOffs));
+    SetSize({$IFDEF CPU64}Int64{$ENDIF}(Max(0, Size - LIntRecOffs)));
     if FCount > 0 then
       Dec(FCount);
     if Size < sizeof(TMPHUndoRec) then
@@ -8560,7 +8563,7 @@ begin
   end;
 end;
 
-procedure TMPHUndoStorage.SetSize(NewSize: integer);
+procedure TMPHUndoStorage.SetSize({$ifdef CPU64}const NewSize: Int64{$else}NewSize: LongInt{$endif});
 begin
   inherited;
   if NewSize < sizeof(TMPHUndoRec) then
