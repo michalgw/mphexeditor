@@ -5251,7 +5251,7 @@ begin
   ShowCaret(Handle);
   // fix caret position if needed
   if Focused and (FCaretYOffset <> OldOffset) then
-    SetCaretPos(FCaretXPos, FCaretYPos + FCaretYOffset);
+    SetCaretPosEx(Handle, FCaretXPos, FCaretYPos + FCaretYOffset);
 end;
 
 procedure TCustomMPHexEditor.SetBytesPerColumn(const Value: integer);
@@ -6099,7 +6099,7 @@ begin
         Invalidate;
       end;
     end;
-    SetCaretPos(X, Y + FCaretYOffset);
+    SetCaretPosEx(Handle, X, Y + FCaretYOffset);
     FCaretXPos := X;
     FCaretYPos := Y;
   end;
