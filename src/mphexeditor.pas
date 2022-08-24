@@ -6956,6 +6956,10 @@ begin
 //  if UseRightToLeftAlignment then
 //    ChangeGridOrientation(False);
 
+  {$IF Defined(LCLGTK2) or Defined(LCLQT) or Defined(LCLQT5)}
+  CheckSetCaret;
+  {$ENDIF}
+
 end;
 
 procedure TCustomMPHexEditor.SetSelectionAsHex(const s: string);
