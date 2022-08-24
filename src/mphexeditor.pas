@@ -5251,7 +5251,15 @@ begin
   ShowCaret(Handle);
   // fix caret position if needed
   if Focused and (FCaretYOffset <> OldOffset) then
+  {$IF Defined(LCLGTK2) or Defined(LCLQT) or Defined(LCLQT5)}
+  begin
+    HideCaret(Handle);
+  {$ENDIF}
     SetCaretPosEx(Handle, FCaretXPos, FCaretYPos + FCaretYOffset);
+  {$IF Defined(LCLGTK2) or Defined(LCLQT) or Defined(LCLQT5)}
+    ShowCaret(Handle);
+  end;
+  {$ENDIF}
 end;
 
 procedure TCustomMPHexEditor.SetBytesPerColumn(const Value: integer);
@@ -6099,7 +6107,13 @@ begin
         Invalidate;
       end;
     end;
+    {$IF Defined(LCLGTK2) or Defined(LCLQT) or Defined(LCLQT5)}
+    HideCaret(Handle);
+    {$ENDIF}
     SetCaretPosEx(Handle, X, Y + FCaretYOffset);
+    {$IF Defined(LCLGTK2) or Defined(LCLQT) or Defined(LCLQT5)}
+    ShowCaret(Handle);
+    {$ENDIF}
     FCaretXPos := X;
     FCaretYPos := Y;
   end;
