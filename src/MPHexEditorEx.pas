@@ -923,7 +923,7 @@ type
       formatetcOut: TFormatEtc): HResult; stdcall;
     Function SetData(Const formatetc : FORMATETC;
       {$IFDEF FPC}
-      {$IF FPC_FullVersion >= 30200}var{$ELSE}const{$IFEND} medium:STGMEDIUM;
+      {$IF Defined( FPC ) AND ( FPC_FullVersion >= 30200 )}var{$ELSE}const{$IFEND} medium:STGMEDIUM;
       {$ELSE}
       var medium:STGMEDIUM;
       {$ENDIF FPC}
@@ -1142,7 +1142,9 @@ var
   LStrFormatName: string;
   LszBuffer: array[0..511] of char;
 begin
+  {$IFNDEF FPC}
   {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
   Result := False;
 
   // create and show a dialog for clipboard format selection
@@ -1260,7 +1262,9 @@ begin
   finally
     Free;
   end;
-  {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118  
+  {$IFNDEF FPC}
+  {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
 end;
 
 // query a data object's supported formats and check if we can "paste" them
@@ -3316,10 +3320,14 @@ begin
       case S[LIntLoop] of
         'f': Result := Result + ExtractFileName(FEditor.Filename);
         'F': Result := Result + FEditor.Filename;
+        {$IFNDEF FPC}
         {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+        {$ENDIF}
         'p': Result := Result + IntToRadix(Page, 10);
         'P': Result := Result + IntToRadix(FPages, 10);
+        {$IFNDEF FPC}
         {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+        {$ENDIF}
         't': Result := Result + TimeToStr(now);
         'd': Result := Result + DateToStr(now);
         '>':
@@ -3416,12 +3424,16 @@ function TMPHCanvasPrinter.DrawOrCalc(const JustCalc: boolean; const Page:
         Result := '  '
       else
       begin
+        {$IFNDEF FPC}
         {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+        {$ENDIF}
         if FEditor.HexLowerCase then
           Result := LowerCase(IntToRadixLen(FEditor.Data[CurPosition], 16, 2))
         else
           Result := UpperCase(IntToRadixLen(FEditor.Data[CurPosition], 16, 2));
+        {$IFNDEF FPC}
         {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+        {$ENDIF}
         if FEditor.SwapNibbles and (Length(Result) = 2) then
           Result := Result[2] + Result[1];
       end;
@@ -3437,9 +3449,13 @@ function TMPHCanvasPrinter.DrawOrCalc(const JustCalc: boolean; const Page:
       lBack: TColor;
   begin
     Application.ProcessMessages;
+    {$IFNDEF FPC}
     {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+    {$ENDIF}
     LStrPart := FEditor.GetOffsetString(CurPosition);
+    {$IFNDEF FPC}
     {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+    {$ENDIF}
 
     if LStrPart <> '' then
     begin
@@ -3916,9 +3932,13 @@ begin
   if (not Assigned(FEditor)) or (FEditor.DataSize < 1) then
     Exit;
 
+  {$IFNDEF FPC}
   {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
   LIntMinWidth := Length(FEditor.GetOffsetString(FEditor.DataSize));
+  {$IFNDEF FPC}
   {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
 
   if (not JustCalc) and (FLinesPerPage < 1) then
     Exit;
@@ -4057,7 +4077,7 @@ begin
           if (not (pfUseBackgroundColor in FFlags)) or (pfMonochrome in
             FFlags) then
             LRectOut.Bottom := LIntY + (LIntHeight * 3 div 2);
-          ExtTextOutW(FCanvas.Handle, LIntLeft, LIntY, ETO_CLIPPED or
+          {$IFDEF FPC}ExtTextOut{$ELSE}ExtTextOutW{$ENDIF}(FCanvas.Handle, LIntLeft, LIntY, ETO_CLIPPED or
             ETO_OPAQUE, @LRectOut, @LRecTextAttr.Text[LIntLoop],
             1, nil);
           if (not (pfUseBackgroundColor in FFlags)) or (pfMonochrome in
@@ -4137,7 +4157,7 @@ begin
             while (FCanvas.Font.Size > 1) and GetTextExtentPoint32(FCanvas.Handle, @LRecTextAttr.Text[LIntLoop],
             1, LrecSize) and (LRecSize.cx > (LRectOut.Right - LRectOut.Left)) do
             FCanvas.Font.Size := FCanvas.Font.Size -1;
-          ExtTextOutW(FCanvas.Handle, LIntLeft, LIntY, ETO_CLIPPED or
+          {$IFDEF FPC}ExtTextOut{$ELSE}ExtTextOutW{$ENDIF}(FCanvas.Handle, LIntLeft, LIntY, ETO_CLIPPED or
             ETO_OPAQUE, @LRectOut, @LRecTextAttr.Text[LIntLoop],
             1, nil);
           if FEditor.UnicodeChars then

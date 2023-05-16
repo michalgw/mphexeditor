@@ -283,8 +283,16 @@ interface
 
 {$IFDEF FPC}
   {$MODE DELPHI}
+
+  {$IFDEF WINDOWS}
+    {$DEFINE MPH_WIN}
+  {$ENDIF}
 {$ELSE}
   {$R *.res}
+
+  {$IFDEF MSWINDOWS}
+    {$DEFINE MPH_WIN}
+  {$ENDIF}  
 
   {$WARN UNSAFE_TYPE OFF}
   {$WARN UNSAFE_CODE OFF}
@@ -850,6 +858,7 @@ type
     FHasCustomBMP: boolean;
     FStreamFileName: string;
     FHasFile: boolean;
+    FIsLive: boolean;
     FMaxUndo: integer;
     FHexChars: array[0..15] of char;
     FHexLowerCase: boolean;
@@ -883,7 +892,7 @@ type
     FSetDataSizeFillByte: Byte;
 {$ENDIF}
     FRulerNumberBase: byte;
-    fOffset : Cardinal;
+    fOffset : UInt64;
     fOnCellSelect : TNotifyEvent;
     property Color;
 
@@ -1073,6 +1082,9 @@ type
     procedure Changed; virtual;
     // returns the drop file position after a drag'n'drop operation
     function DropPosition: integer;
+    // copy data from pointer to a stream and fire the OnProgress handler
+    procedure Pointer2Stream( Data : PByte; Size : Cardinal; strTo: TStream;
+      const Operation: TMPHProgressKind; const Count: integer = -1);
     // copy a stream to a second one and fire the OnProgress handler
     procedure Stream2Stream(strFrom, strTo: TStream; const Operation:
       TMPHProgressKind; const Count: integer = -1);
@@ -1435,7 +1447,7 @@ type
     procedure ReadMaskChar_I(Reader: TReader);
     procedure WriteMaskChar_I(Writer: TWriter);
 
-    property  Offset : Cardinal read fOffset write fOffset;
+    property  Offset : UInt64 read fOffset write fOffset;
     property  OnCellSelect : TNotifyEvent read fOnCellSelect write fOnCellSelect;
     {$IF NOT Defined( FPC ) AND ( CompilerVersion >= 30 )}
     procedure CMSTYLECHANGED( var Message:TMessage );message CM_STYLECHANGED;
@@ -1503,6 +1515,8 @@ type
     property SetDataSizeFillByte: Byte read FSetDataSizeFillByte write
       FSetDataSizeFillByte;
 {$ENDIF}
+    // has data been data is live memory
+    property IsLive: boolean read FIsLive write FIsLive;
     // has data been load from/saved to a file (or is the filename valid)
     property HasFile: boolean read FHasFile write FHasFile;
     (* each call to UndoBeginUpdate increments an internal counter that prevents using
@@ -1598,6 +1612,12 @@ type
     procedure WriteBuffer(const Buffer; const Index, Count: Integer); virtual;
     // delete the currently selected data
     procedure DeleteSelection(const UndoDesc: string = '');
+    // sets the data buffer to a pointer (live memory)
+    procedure SetDataPointer( Data : Pointer; Size : Cardinal );
+    // sets the data buffer to a MemoryStream (live memory)
+    procedure SetDataStream( Data : TMemoryStream );
+    // load the contents of a pointer into the data buffer
+    procedure LoadFromPointer( Data : Pointer; Size : Cardinal );
     // load the contents of a stream into the data buffer
     procedure LoadFromStream(Strm: TStream);
     // load the contents of a file into the data buffer
@@ -2541,14 +2561,18 @@ end;
 // translate an integer to a radix coded string and left fill with 0
 
 function IntToRadixLen(Value: UInt64; Radix, Len: byte): string;
-var
-  LCrdTemp: cardinal absolute Value;
 begin
   Result := '';
+  {$IFNDEF FPC}
+  {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
   repeat
-    Result := HEX_UPPER[(LCrdTemp mod Radix) + 1] + Result;
-    LCrdTemp := LCrdTemp div Radix;
-  until LCrdTemp = 0;
+    Result := HEX_UPPER[(Value mod Radix) + 1] + Result;
+    Value := Value div Radix;
+  until Value = 0;
+  {$IFNDEF FPC}
+  {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
   while Length(Result) < Len do
     Result := '0' + Result;
 end;
@@ -3107,6 +3131,7 @@ begin
   FHasCustomBMP := False;
   FStreamFileName := '';
   FHasFile := False;
+  FIsLive := False;
   FMaxUndo := 1024 * 1024;
   FPosInCharField := False;
   FLastPosInCharField := True;
@@ -3182,7 +3207,7 @@ begin
   {$IFDEF FPC}
   FBookmarkBitmap.LoadFromLazarusResource('MPHBOOKMARKICONS');
   {$ELSE}
-  FBookmarkBitmap.LoadFromResourceName(HINSTANCE, 'BOOKMARKICONS');
+  FBookmarkBitmap.LoadFromResourceName(HINSTANCE, 'MPHBOOKMARKICONS');
   {$ENDIF FPC}
   SetRulerString;
   ControlStyle := ControlStyle + [csNeedsBorderPaint];
@@ -3300,6 +3325,7 @@ begin
   FModified := False;
   FIsFileReadonly := True;
   FHasFile := False;
+  FIsLive := False;
   MoveColRow(GRID_FIXED, GRID_FIXED, True, True);
   Changed;
 end;
@@ -3354,7 +3380,6 @@ begin
     FHasFile := True;
 
     if aUnModify then
-
     begin
       FModifiedBytes.Size := 0;
       FModified := False;
@@ -3378,6 +3403,84 @@ begin
   WaitCursor;
   FreeStorage(True);
   FHasFile := False;
+  FIsLive  := False;
+end;
+
+procedure TCustomMPHexEditor.SetDataStream( Data : TMemoryStream );
+begin
+  if ( Data = nil ) then
+    Exit;
+  if ( Data.Size <= 0 ) then
+    Exit;
+  if ( Data.Position >= Data.Size ) then
+    Exit;
+
+  SetDataPointer( Pointer( NativeUInt( Data.Memory ) + Data.Position ), Data.Size-Data.Position );
+end;
+
+procedure TCustomMPHexEditor.SetDataPointer( Data : Pointer; Size : Cardinal );
+begin
+  try
+    FreeStorage;
+    CalcSizes;
+    try
+      FDataStorage.Position := 0;
+      FDataStorage.SetPointer( Data, Size );
+    finally
+      FIsLive := True;
+      with FUndoStorage do
+        if UpdateCount < 1 then
+          Reset;
+      FModifiedBytes.Size := 0;
+      CalcSizes;
+      FModified := False;
+      FIsSelecting := False;
+      MoveColRow(GRID_FIXED, GRID_FIXED, True, True);
+      Changed;
+    end;
+  except
+    FreeStorage;
+    FreeStorage(True);
+    FHasFile := False;
+    FIsLive  := False;
+    raise;
+  end;
+end;
+
+procedure TCustomMPHexEditor.LoadFromPointer( Data : Pointer; Size : Cardinal );
+begin
+  try
+    FreeStorage;
+    CalcSizes;
+    WaitCursor;
+    try
+      try
+        FDataStorage.Size := Size;
+        FDataStorage.Position := 0;
+
+        Pointer2Stream(Data, Size, FDataStorage, pkLoad);
+
+        FDataStorage.Position := 0;
+      finally
+        with FUndoStorage do
+          if UpdateCount < 1 then
+            Reset;
+        FModifiedBytes.Size := 0;
+        CalcSizes;
+        FModified := False;
+        FIsSelecting := False;
+        MoveColRow(GRID_FIXED, GRID_FIXED, True, True);
+        Changed;
+      end;
+    finally
+      OldCursor;
+    end;
+  except
+    FreeStorage;
+    FreeStorage(True);
+    FHasFile := False;
+    raise;
+  end;
 end;
 
 procedure TCustomMPHexEditor.LoadFromStream(Strm: TStream);
@@ -3524,7 +3627,7 @@ begin
 
   if (FReplaceUnprintableCharsBy <> #0) and
   {$IFDEF FPC}
-  (Result in FMaskedChars) then
+  ( Result in FMaskedChars )
   {$ELSE}
   {$IF CompilerVersion >= 20}CharInSet( Result,{$ELSE}( Result in{$IFEND} FMaskedChars )
   {$ENDIF} then
@@ -3547,6 +3650,47 @@ begin
     end;
   finally
     FPosInCharField := LBoolInCharField;
+  end;
+end;
+
+procedure TCustomMPHexEditor.Pointer2Stream( Data : PByte; Size : Cardinal; strTo: TStream;
+  const Operation: TMPHProgressKind; const Count: integer = -1);
+var
+  LBytProgress, LBytLastProgress: byte;
+  LIntRemain, LIntRead, LIntCount: integer;
+  LBoolCancel: boolean;
+begin
+  LIntCount := Count;
+  if LIntCount = -1 then
+    LIntCount := Size;
+
+  LIntRemain := LIntCount;
+  LBoolCancel := False;
+  LBytLastProgress := 255;
+
+  while LIntRemain > 0 do
+  begin
+    LBytProgress := Round(((LIntCount - LIntRemain) / LIntCount) * 100);
+    if (LBytProgress <> LBytLastProgress) or (LIntRemain <=
+      MPH_FILEIO_BLOCKSIZE) then
+    begin
+      if LIntRemain <= MPH_FILEIO_BLOCKSIZE then
+        LBytLastProgress := 100
+      else
+        LBytLastProgress := LBytProgress;
+      if Assigned(FOnProgress) then
+      begin
+        FOnProgress(self, Operation, '', LBytLastProgress,
+          LBoolCancel);
+        if LBoolCancel then
+          raise EMPHexEditor.Create(ERR_CANCELLED);
+      end
+    end;
+
+    LIntRead := Min(LIntRemain, MPH_FILEIO_BLOCKSIZE);
+    strTo.WriteBuffer(Data^, LIntRead);
+    Inc( Data, LIntRead );
+    Dec(LIntRemain, LIntRead);
   end;
 end;
 
@@ -5478,7 +5622,7 @@ end;
 
 procedure TCustomMPHexEditor.SetBytesPerColumn(const Value: Byte);
 begin
-  if ((Value < 1) {or (Value > 256)}) or
+  if (Value < 1) or
     (FUnicodeCharacters and ((Value mod 2) <> 0)) then
     raise EMPHexEditor.Create(ERR_INVALID_BYTESPERCOL)
   else if FBytesPerCol <> (Value * 2) then
@@ -5738,7 +5882,9 @@ procedure TCustomMPHexEditor.SetOffsetDisplayWidth;
 var
   s: string;
 begin
+  {$IFNDEF FPC}
   {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
   if Assigned(FOnGetOffsetText) and (not FOffsetHandler) then
   begin
     FOffsetHandler := True;
@@ -5758,13 +5904,15 @@ begin
           _BytesPerUnit, Radix));
 
 
-    FOffSetDisplayWidth := Length(GetOffsetString( ( Cardinal( RowCount ) - 3 ) * FBytesPerRow + fOffset ) ) + 1;
+    FOffSetDisplayWidth := Length(GetOffsetString( ( Cardinal( RowCount ) - 3 ) * FBytesPerRow ) ) + 1;
   end;
   if FGutterWidth = -1 then
     DoSetCellWidth(0, FOffSetDisplayWidth * FCharWidth + 20 + 1)
   else
     DoSetCellWidth(0, FGutterWidth);
-  {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118    
+  {$IFNDEF FPC}
+  {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
 end;
 
 function TCustomMPHexEditor.Seek(const aOffset, aOrigin: integer): integer;
@@ -5930,20 +6078,28 @@ begin
     Dec( ACol, ADiv )
   else
     ACol := Col div 2;
+  {$IFNDEF FPC}
   {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
   result := fOffset + ( ( Cardinal( Row ) - GRID_FIXED ) * fBytesPerRow + ACol ) - 1;
+  {$IFNDEF FPC}
   {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
 end;
 
 procedure TCustomMPHexEditor.SetCurrentOffset( Value: Int64 );
 begin
+  {$IFNDEF FPC}
   {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
   Dec( Value, fOffset );
   if ( Value > DataSize ) then
     Exit;
   Row := ( Value div FBytesPerRow ) + GRID_FIXED;
   Col := ( Value mod FBytesPerRow ) * 2 + GRID_FIXED;
+  {$IFNDEF FPC}
   {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+  {$ENDIF}
 end;
 function TCustomMPHexEditor.GetInsertMode: boolean;
 begin
@@ -6570,7 +6726,7 @@ begin
     FOffsetHandler := True;
     try
       FIsMaxOffset := False;
-      FOnGetOffsetText(self, Position, Result)
+      FOnGetOffsetText(self, Position + fOffset, Result)
     finally
       FOffsetHandler := False;
     end;
@@ -6583,14 +6739,18 @@ begin
       begin
         if (MinWidth <> 0) or (Position <> 0) then
         begin
+        {$IFNDEF FPC}
         {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+        {$ENDIF}
           if FHexLowercase then
-            Result := LowerCase(IntToRadixLen(Position div _BytesPerUnit, Radix,
+            Result := LowerCase(IntToRadixLen((Position + fOffset) div _BytesPerUnit, Radix,
               MinWidth))
           else
-            Result := Uppercase(IntToRadixLen(Position div _BytesPerUnit, Radix,
+            Result := Uppercase(IntToRadixLen((Position + fOffset) div _BytesPerUnit, Radix,
               MinWidth));
+        {$IFNDEF FPC}
         {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+        {$ENDIF}
         end;
         Result := Prefix + Result + Suffix;
       end;
@@ -6603,9 +6763,7 @@ begin
   if FOffsetFormat.Format = '' then
     Result := IntToRadix(Position, 16)
   else
-    {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
-    Result := GetOffsetString(Position + fOffset);
-    {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118    
+    Result := GetOffsetString(Position);
 end;
 
 function TCustomMPHexEditor.RowHeight: integer;
@@ -6681,9 +6839,11 @@ var
   // get the width of a wide text
   function GetTextWidthW( Value : string = '' ): Integer;
   begin
-    {GetTextExtentPoint32W(Canvas.Handle, PWideChar(LWStrOutput),
+    (*
+    {$IFDEF FPC}GetTextExtentPoint32{$ELSE}GetTextExtentPoint32W{$ENDIF}(Canvas.Handle, PWideChar(LWStrOutput),
       Length(LWStrOutput), LrecSize);
-    Result := LRecSize.cx;}
+    Result := LRecSize.cx
+    *)
     if ( Value <> '' ) then
       Result := Canvas.TextWidth(Value)
     else
@@ -6749,9 +6909,13 @@ var
     LColTextBackColor := LColBackColor;
 
     (* text ausgeben *)
+    {$IFNDEF FPC}
     {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
-    LWStrOutput := GetOffsetString( ( Cardinal( LIntCurRow ) - GRID_FIXED ) * FBytesPerRow + fOffset);
+    {$ENDIF}
+    LWStrOutput := GetOffsetString( ( Cardinal( LIntCurRow ) - GRID_FIXED ) * FBytesPerRow );
+    {$IFNDEF FPC}
     {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+    {$ENDIF}
     _TextOut;
 
     (* auf bookmark prüfen *)
@@ -6816,10 +6980,17 @@ var
     begin
       if not bIsCharCell then
       begin // hexadecimal part
-        if ((LIntCurCol - GRID_FIXED) mod 2) = FSwapNibbles then                                                 
+        {$IF NOT Defined( FPC ) AND Defined( MPH_WIN )}
+        if ((LIntCurCol - GRID_FIXED) mod 2) = FSwapNibbles then
           {LWChrOutput := }MultiByteToWideChar( 0{DefaultUserCodePage}, 0, @FHexChars[Data[LIntDataPos] shr 4], 1, @LWChrOutput, 1 ) // FHexChars[Data[LIntDataPos] shr 4]
         else
           {LWChrOutput := }MultiByteToWideChar( 0{DefaultUserCodePage}, 0, @FHexChars[Data[LIntDataPos] AND 15], 1, @LWChrOutput, 1 ); // FHexChars[Data[LIntDataPos] and 15]
+        {$ELSE}
+        if ((LIntCurCol - GRID_FIXED) mod 2) = FSwapNibbles then
+          LWChrOutput := WideChar( FHexChars[Data[LIntDataPos] shr 4] ) // FHexChars[Data[LIntDataPos] shr 4]
+        else
+          LWChrOutput := WideChar( FHexChars[Data[LIntDataPos] AND 15] ); // FHexChars[Data[LIntDataPos] and 15]
+        {$IFEND}
       end
       else
       begin
@@ -6831,14 +7002,20 @@ var
             SwapWideChar(LWChrOutput);
         end
         else
-//          LWChrOutput := char(Data[LIntDataPos]);
           begin
           b := AnsiChar( Data[LIntDataPos] );
+          {$IF NOT Defined( FPC ) AND Defined( MPH_WIN )}
           MultiByteToWideChar( 0{DefaultUserCodePage}, 0, @b, 1, @LWChrOutput, 1 );
+          {$ELSE}
+          LWChrOutput := WideChar( B );
+          {$IFEND}
           end;
         if (LWChrOutput < #256) and {$IF CompilerVersion >= 20}CharInSet( Char(LWChrOutput),{$ELSE}( Char(LWChrOutput) in{$IFEND} FMaskedChars ) then
-//          LWChrOutput := FReplaceUnprintableCharsBy;
+          {$IF NOT Defined( FPC ) AND Defined( MPH_WIN )}
           MultiByteToWideChar( 0{DefaultUserCodePage}, 0, @FReplaceUnprintableCharsBy, 1, @LWChrOutput, 1 );
+          {$ELSE}
+          LWChrOutput := WideChar( FReplaceUnprintableCharsBy );
+          {$IFEND}
       end;
 
       // Test whether byte has changed
@@ -6922,10 +7099,10 @@ var
           FillRect(LRctWhere);
           LIntOldFontSize := Canvas.Font.Size;
           if FUnicodeCharacters then
-            while (Canvas.Font.Size > 1) and GetTextExtentPoint32W(Canvas.Handle, @LWChrOutput,
+            while (Canvas.Font.Size > 1) and {$IFDEF FPC}GetTextExtentPoint32{$ELSE}GetTextExtentPoint32W{$ENDIF}(Canvas.Handle, @LWChrOutput,
               1, LrecSize) and (LRecSize.cx > (LRect2.Right - LRect2.Left)) do
               Canvas.Font.Size := Canvas.Font.Size -1;
-          ExtTextOutW(Handle, Left+tOffset, Top,
+          {$IFDEF FPC}ExtTextOut{$ELSE}ExtTextOutW{$ENDIF}(Handle, Left+tOffset, Top,
             ETO_CLIPPED or ETO_OPAQUE, @LRect2, @LWChrOutput,
             1, nil);
           if FUnicodeCharacters then
@@ -7347,15 +7524,11 @@ begin
   // invalidieren
   FBookmarkImageList.Clear;
 
-  {$IFDEF FPC}
-  {$IF LCL_FullVersion >= 2000000}
+  {$IF Defined( FPC ) AND ( LCL_FullVersion >= 2000000 )}
   FBookmarkImageList.AddSliced(FBookmarkBitmap, 20, 1);
   {$ELSE}
   FBookmarkImageList.AddMasked(FBookmarkBitmap, FBookmarkBitmap.Canvas.Pixels[0, 0]);
   {$IFEND}
-  {$ELSE}
-  FBookmarkImageList.AddMasked(FBookmarkBitmap, FBookmarkBitmap.Canvas.Pixels[0, 0]);
-  {$ENDIF FPC}
 
   if HandleAllocated then
     Invalidate;
@@ -7367,7 +7540,7 @@ begin
     {$IFDEF FPC}
     FBookmarkBitmap.LoadFromLazarusResource('MPHBOOKMARKICONS')
     {$ELSE}
-    FBookmarkBitmap.LoadFromResourceName(HINSTANCE, 'BOOKMARKICONS')
+    FBookmarkBitmap.LoadFromResourceName(HINSTANCE, 'MPHBOOKMARKICONS')
     {$ENDIF FPC}
   else
   begin
@@ -7409,7 +7582,12 @@ end;
 procedure TCustomMPHexEditor.FreeStorage(FreeUndo: boolean = False);
 begin
   if not FreeUndo then
-    FDataStorage.Size := 0
+    begin
+    if fIsLive then
+      FDataStorage.SetPointer( nil, 0 )
+    else
+      FDataStorage.Size := 0;
+    end
   else
     FUndoStorage.Size := 0;
 end;
@@ -7514,9 +7692,13 @@ begin
   intLen := 2 * FUsedRulerBytesPerUnit;
   for intLoop := 0 to Pred(FBytesPerRow div FUsedRulerBytesPerUnit) do
   begin
+    {$IFNDEF FPC}
     {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+    {$ENDIF}
     sLoop := IntToRadixLen(intLoop, FRulerNumberBase, intLen);
+    {$IFNDEF FPC}
     {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+    {$ENDIF}
     if Length(sLoop) > intLen then
       Delete(sLoop, 1, Length(sLoop) - intLen);
     FRulerString := FRulerString + sLoop;
@@ -7532,9 +7714,13 @@ begin
     intLen := FUsedRulerBytesPerUnit;
   for intLoop := 0 to Pred(FBytesPerRow div FUsedRulerBytesPerUnit) do
   begin
+    {$IFNDEF FPC}
     {$IF CompilerVersion < 23}{$RANGECHECKS OFF}{$IFEND} // RangeCheck might cause Internal-Error C1118
+    {$ENDIF}
     sLoop := IntToRadix(intLoop, FRulerNumberBase);
+    {$IFNDEF FPC}
     {$IF CompilerVersion < 23}{$RANGECHECKS ON}{$IFEND} // RangeCheck might cause Internal-Error C1118
+    {$ENDIF}
     if Length(sLoop) > intLen then
       Delete(sLoop, 1, Length(sLoop) - intLen)
     else
