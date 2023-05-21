@@ -4154,7 +4154,7 @@ begin
             LIntY + LIntHeight);
           LIntOldFontSize := FCanvas.Font.Size;
           if FEditor.UnicodeChars then
-            while (FCanvas.Font.Size > 1) and GetTextExtentPoint32(FCanvas.Handle, @LRecTextAttr.Text[LIntLoop],
+            while (FCanvas.Font.Size > 1) and {$IFDEF FPC}GetTextExtentPoint32{$ELSE}GetTextExtentPoint32W{$ENDIF}(FCanvas.Handle, @LRecTextAttr.Text[LIntLoop],
             1, LrecSize) and (LRecSize.cx > (LRectOut.Right - LRectOut.Left)) do
             FCanvas.Font.Size := FCanvas.Font.Size -1;
           {$IFDEF FPC}ExtTextOut{$ELSE}ExtTextOutW{$ENDIF}(FCanvas.Handle, LIntLeft, LIntY, ETO_CLIPPED or

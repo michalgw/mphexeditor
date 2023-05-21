@@ -3420,6 +3420,12 @@ end;
 
 procedure TCustomMPHexEditor.SetDataPointer( Data : Pointer; Size : Cardinal );
 begin
+  if ( Data = nil ) OR ( Size = 0 ) then
+    begin
+    Clear;
+    Exit;
+    end;
+
   try
     FreeStorage;
     CalcSizes;
