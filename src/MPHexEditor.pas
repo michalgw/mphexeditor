@@ -2529,7 +2529,7 @@ function IntToRadix(Value: UInt64; Radix: byte): string;
 
   function IntToOctal(AValue : Integer): string;
   const
-    OctDigits  : array[0..7] of AnsiChar = AnsiString('01234567');
+    OctDigits  : array[0..7] of Char = String('01234567');
   begin
     if AValue = 0 then
       Result := '0'
@@ -6049,7 +6049,7 @@ end;
 
 function TCustomMPHexEditor.GetAsHex: string;
 begin
-  Result := FDataStorage.GetAsHex(0, DataSize, SwapNibbles)
+  Result := string( FDataStorage.GetAsHex(0, DataSize, SwapNibbles) );
 end;
 
 function TCustomMPHexEditor.GetSelectionAsHex: string;
@@ -6057,8 +6057,7 @@ begin
   if (DataSize < 1) or (SelCount < 1) then
     Result := ''
   else
-    Result := FDataStorage.GetAsHex(Min(SelStart, SelEnd), SelCount,
-      SwapNibbles);
+    Result := string( FDataStorage.GetAsHex(Min(SelStart, SelEnd), SelCount, SwapNibbles) );
 end;
 
 function TCustomMPHexEditor.GetBytesFromCursorAsHex( Count : Word ): string;
@@ -6066,7 +6065,7 @@ begin
   if (DataSize < 1) or (SelStart+Count > DataSize ) then
     Result := ''
   else
-    Result := FDataStorage.GetAsHex( SelStart, Count, SwapNibbles);
+    Result := string( FDataStorage.GetAsHex( SelStart, Count, SwapNibbles) );
 end;
 
 function TCustomMPHexEditor.GetCurrentOffset: Int64;
@@ -6986,17 +6985,10 @@ var
     begin
       if not bIsCharCell then
       begin // hexadecimal part
-        {$IF NOT Defined( FPC ) AND Defined( MPH_WIN )}
-        if ((LIntCurCol - GRID_FIXED) mod 2) = FSwapNibbles then
-          {LWChrOutput := }MultiByteToWideChar( 0{DefaultUserCodePage}, 0, @FHexChars[Data[LIntDataPos] shr 4], 1, @LWChrOutput, 1 ) // FHexChars[Data[LIntDataPos] shr 4]
-        else
-          {LWChrOutput := }MultiByteToWideChar( 0{DefaultUserCodePage}, 0, @FHexChars[Data[LIntDataPos] AND 15], 1, @LWChrOutput, 1 ); // FHexChars[Data[LIntDataPos] and 15]
-        {$ELSE}
         if ((LIntCurCol - GRID_FIXED) mod 2) = FSwapNibbles then
           LWChrOutput := WideChar( FHexChars[Data[LIntDataPos] shr 4] ) // FHexChars[Data[LIntDataPos] shr 4]
         else
           LWChrOutput := WideChar( FHexChars[Data[LIntDataPos] AND 15] ); // FHexChars[Data[LIntDataPos] and 15]
-        {$IFEND}
       end
       else
       begin
@@ -7010,18 +7002,10 @@ var
         else
           begin
           b := AnsiChar( Data[LIntDataPos] );
-          {$IF NOT Defined( FPC ) AND Defined( MPH_WIN )}
-          MultiByteToWideChar( 0{DefaultUserCodePage}, 0, @b, 1, @LWChrOutput, 1 );
-          {$ELSE}
           LWChrOutput := WideChar( B );
-          {$IFEND}
           end;
         if (LWChrOutput < #256) and {$IF CompilerVersion >= 20}CharInSet( Char(LWChrOutput),{$ELSE}( Char(LWChrOutput) in{$IFEND} FMaskedChars ) then
-          {$IF NOT Defined( FPC ) AND Defined( MPH_WIN )}
-          MultiByteToWideChar( 0{DefaultUserCodePage}, 0, @FReplaceUnprintableCharsBy, 1, @LWChrOutput, 1 );
-          {$ELSE}
           LWChrOutput := WideChar( FReplaceUnprintableCharsBy );
-          {$IFEND}
       end;
 
       // Test whether byte has changed
@@ -7095,7 +7079,7 @@ var
         LBoolDraw := True;
         if Assigned(FOnDrawCell) then
         begin
-          LWStrOutput := UTF8Encode('' + LWChrOutput);
+          LWStrOutput := string( UTF8Encode('' + LWChrOutput) );
           FOnDrawCell(self, Canvas, LIntCurCol, LIntCurRow, LWStrOutput, LRect2,
             LBoolDraw);
           LWChrOutput := WideString(LWStrOutput+#0)[1];
@@ -7105,11 +7089,11 @@ var
           FillRect(LRctWhere);
           LIntOldFontSize := Canvas.Font.Size;
           if FUnicodeCharacters then
-            while (Canvas.Font.Size > 1) and {$IFDEF FPC}GetTextExtentPoint32{$ELSE}GetTextExtentPoint32W{$ENDIF}(Canvas.Handle, @LWChrOutput,
+            while (Canvas.Font.Size > 1) and {$IFDEF FPC}GetTextExtentPoint32{$ELSE}GetTextExtentPoint32W{$ENDIF}(Canvas.Handle, PWideChar( @LWChrOutput ),
               1, LrecSize) and (LRecSize.cx > (LRect2.Right - LRect2.Left)) do
               Canvas.Font.Size := Canvas.Font.Size -1;
           {$IFDEF FPC}ExtTextOut{$ELSE}ExtTextOutW{$ENDIF}(Handle, Left+tOffset, Top,
-            ETO_CLIPPED or ETO_OPAQUE, @LRect2, @LWChrOutput,
+            ETO_CLIPPED or ETO_OPAQUE, @LRect2, PWideChar( @LWChrOutput ),
             1, nil);
           if FUnicodeCharacters then
             Canvas.Font.Size := LIntOldFontSize;
@@ -9109,7 +9093,7 @@ begin
         if LSStDesc = '' then
           FDescription := STRS_UNDODESC[GetUndoKind(LRecUndo.Flags)]
         else
-          FDescription := LSStDesc;
+          FDescription := string( LSStDesc );
       end;
     end;
   end;
