@@ -467,6 +467,10 @@ const
     )
     );
 
+{$IF NOT DECLARED(INVALID_HANDLE_VALUE)}
+  INVALID_HANDLE_VALUE = System.THandle(-1);
+{$ENDIF}
+
 type
   // custom Exception class
   EMPHexEditor = class(Exception);
