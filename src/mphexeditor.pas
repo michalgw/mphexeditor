@@ -3942,6 +3942,7 @@ begin
             MoveColRow(LIntCol, LIntRow, True, True);
           end;
         end;
+        Key := 0;
       end;
 
     VK_NEXT:
@@ -3968,6 +3969,7 @@ begin
             MoveColRow(LIntCol, LIntRow, True, True);
           end;
         end;
+        Key := 0;
       end;
 
     VK_HOME:
@@ -3989,6 +3991,7 @@ begin
             MoveColRow(Max(GRID_FIXED, GetOtherFieldCol(GRID_FIXED)),
               Row, True, True);
         end;
+        Key := 0;
       end;
 
     VK_END:
@@ -4019,62 +4022,66 @@ begin
             MoveColRow(LgrcPosition.x, LgrcPosition.y, True, True);
           end
         end;
+        Key := 0;
       end;
 
     VK_LEFT, VK_BACK:
-      if (InsertMode and (not FReadOnlyView)) and (Key = VK_BACK) then
       begin
-        if SelCount > 0 then
-          DeleteSelection
-        else
-          InternalErase(True);
-      end
-      else if (not (ssCTRL in Shift)) then
-      begin
-        if FIsSelecting or (FUnicodeCharacters and FPosInCharField) then
-          LIntCol := GetPosAtCursor(Col, Row) - FBytesPerUnit
-        else
-          LIntCol := GetPosAtCursor(Col, Row) - 1;
-        if FPosInCharField then
+        if (InsertMode and (not FReadOnlyView)) and (Key = VK_BACK) then
         begin
-          if LIntCol < 0 then
-            LIntCol := 0;
-          LgrcPosition := GetCursorAtPos(LIntCol, FPosInCharField);
-          MoveColRow(LgrcPosition.x, LgrcPosition.y, True, True);
+          if SelCount > 0 then
+            DeleteSelection
+          else
+            InternalErase(True);
         end
-        else
+        else if (not (ssCTRL in Shift)) then
         begin
-          if FIsSelecting then
+          if FIsSelecting or (FUnicodeCharacters and FPosInCharField) then
+            LIntCol := GetPosAtCursor(Col, Row) - FBytesPerUnit
+          else
+            LIntCol := GetPosAtCursor(Col, Row) - 1;
+          if FPosInCharField then
           begin
-            CheckUnit(LIntCol);
+            if LIntCol < 0 then
+              LIntCol := 0;
             LgrcPosition := GetCursorAtPos(LIntCol, FPosInCharField);
             MoveColRow(LgrcPosition.x, LgrcPosition.y, True, True);
           end
           else
           begin
-            LIntCol := LIntCol + 1;
-            LgrcPosition := GetCursorAtPos(LIntCol, False);
-            if LgrcPosition.x < Col then
-              MoveColRow(Col - 1, Row, True, True)
+            if FIsSelecting then
+            begin
+              CheckUnit(LIntCol);
+              LgrcPosition := GetCursorAtPos(LIntCol, FPosInCharField);
+              MoveColRow(LgrcPosition.x, LgrcPosition.y, True, True);
+            end
             else
             begin
-              LIntCol := LIntCol - 1;
-              if LIntCol >= 0 then
+              LIntCol := LIntCol + 1;
+              LgrcPosition := GetCursorAtPos(LIntCol, False);
+              if LgrcPosition.x < Col then
+                MoveColRow(Col - 1, Row, True, True)
+              else
               begin
-                LgrcPosition := GetCursorAtPos(LIntCol, FPosInCharField);
-                MoveColRow(LgrcPosition.x + 1, LgrcPosition.y, True, True);
-              end;
-            end
+                LIntCol := LIntCol - 1;
+                if LIntCol >= 0 then
+                begin
+                  LgrcPosition := GetCursorAtPos(LIntCol, FPosInCharField);
+                  MoveColRow(LgrcPosition.x + 1, LgrcPosition.y, True, True);
+                end;
+              end
+            end;
+          end;
+        end
+        else
+        begin
+          if Key = VK_LEFT then
+          begin
+            LIntCol := GRID_FIXED;
+            MoveColRow(LIntCol, Row, True, True);
           end;
         end;
-      end
-      else
-      begin
-        if Key = VK_LEFT then
-        begin
-          LIntCol := GRID_FIXED;
-          MoveColRow(LIntCol, Row, True, True);
-        end;
+        Key := 0;
       end;
 
     VK_RIGHT:
@@ -4124,6 +4131,7 @@ begin
           LIntCol := GetLastCharCol;
           MoveColRow(LIntCol, Row, True, True);
         end;
+        Key := 0;
       end;
 
     VK_DOWN:
@@ -4137,7 +4145,8 @@ begin
           begin
             MoveColRow(LIntCol, LIntRow, True, True);
           end
-          end;
+        end;
+        Key := 0;
       end;
 
     VK_UP:
@@ -4150,17 +4159,20 @@ begin
           begin
             MoveColRow(LIntCol, LIntRow, True, True);
           end
-          end;
+        end;
+        Key := 0;
       end;
 
     Word('T'): if (ssCtrl in Shift) then
       begin
         Col := Max(GRID_FIXED, GetOtherFieldCol(Col));
+        Key := 0;
       end;
 
     VK_TAB: if ((Shift = []) or (Shift = [ssShift])) then
       begin // tab-taste
         Col := Max(GRID_FIXED, GetOtherFieldCol(Col));
+        Key := 0;
       end;
 
     Word('0')..Word('9'): if ssCtrl in Shift then
@@ -4174,6 +4186,7 @@ begin
         begin
           GotoBookmark(Key - Ord('0'));
         end;
+        Key := 0;
       end;
 
     VK_SHIFT: if (Shift = [ssShift]) or (Shift = [ssShift, ssCtrl]) then
@@ -4186,10 +4199,16 @@ begin
         if (SelCount > 0) and (InsertMode or (Shift = [ssCtrl])) then
           DeleteSelection
         else if InsertMode or (Shift = [ssCtrl]) then
-          InternalErase(False)
+          InternalErase(False);
+        Key := 0;
       end;
 
-    VK_INSERT: if (Shift = []) then InsertMode := not InsertMode;
+    VK_INSERT:
+      if (Shift = []) then
+      begin
+        InsertMode := not InsertMode;
+        Key := 0;
+      end;
   end;
 end;
 
