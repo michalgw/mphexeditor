@@ -7871,8 +7871,7 @@ end;
 procedure TCustomMPHexEditor.MoveColRow(ACol, ARow: Longint; MoveAnchor,
   Show: Boolean);
 begin
-  Col := ACol;
-  Row := ARow;
+  MoveExtend(False, ACol, ARow);
   if Show then
     CheckSetCaret;
 end;
