@@ -1470,6 +1470,10 @@ type
     function GetAnyOffsetString(const Position: integer): string; virtual;
     // returns the height of one row in pixels
     function RowHeight: integer;
+    // returns the width of all columns
+    function DisplayWidth: Integer;
+    // returns the height of all rows
+    function DisplayHeight: Integer;
     // free the undo storage (discard all possible undo steps)
     procedure ResetUndo;
     // set the current position (like TStream.Seek)
@@ -6117,7 +6121,7 @@ begin
     BookMarkChanged;
 end;
 
-procedure TCustomMPHexEditor.IntSetCaretPos(const X, Y, aCol: integer);
+procedure TCustomMPHexEditor.IntSetCaretPos(const X, Y, ACol: integer);
 begin
   if Focused then
   begin
@@ -6360,6 +6364,20 @@ end;
 function TCustomMPHexEditor.RowHeight: integer;
 begin
   Result := DefaultRowHeight;
+end;
+
+function TCustomMPHexEditor.DisplayWidth: Integer;
+var
+  I: Integer;
+begin
+  Result := 0;
+  for I := 0 to ColCountRO - 1 do
+    Inc(Result, ColWidths[I]);
+end;
+
+function TCustomMPHexEditor.DisplayHeight: Integer;
+begin
+  Result := RowHeights[0] + RowHeights[1] + (RowCountRO - GRID_FIXED) * DefaultRowHeight;
 end;
 
 function TCustomMPHexEditor.GetBookmark(Index: byte): TMPHBookmark;
